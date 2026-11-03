@@ -1,0 +1,670 @@
+<!doctype html>
+<html lang="vi">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
+<title>Six Seven Pose</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Bungee&family=Chakra+Petch:wght@500;700&display=swap">
+<style>
+/* Layout: full-bleed landscape camera stage; two ghost skeletons sit on the players, HUD hugs the top and bottom edges. */
+:root{
+  --ink:#0E0B1F; --ink-2:#1B1636; --paper:#F6F1FF; --muted:#A49CC8;
+  --p1:#FF5A36; --p2:#FFD23F; --ok:#3DFFB0; --danger:#FF3D6E;
+  --display:'Bungee', 'Arial Black', Impact, sans-serif;
+  --body:'Chakra Petch', 'Segoe UI', system-ui, sans-serif;
+  color-scheme:dark;
+}
+*{box-sizing:border-box}
+html,body{height:100%;margin:0;background:var(--ink);color:var(--paper);font-family:var(--body);overflow:hidden;-webkit-tap-highlight-color:transparent}
+[hidden]{display:none!important}
+#stage{position:fixed;inset:0;overflow:hidden;background:var(--ink)}
+#cam{position:absolute;inset:0;width:100%;height:100%;object-fit:cover;transform:scaleX(-1)}
+#fx{position:absolute;inset:0;width:100%;height:100%;pointer-events:none}
+#stage::after{content:"";position:absolute;inset:0;pointer-events:none;background:radial-gradient(ellipse at center,transparent 55%,rgba(14,11,31,.7) 100%)}
+
+/* HUD */
+#hud{position:absolute;inset:0;z-index:3;pointer-events:none;
+  padding:calc(env(safe-area-inset-top,0px) + 12px) 16px calc(env(safe-area-inset-bottom,0px) + 12px);
+  display:flex;flex-direction:column;justify-content:space-between}
+.hud-top{display:grid;grid-template-columns:1fr auto 1fr;align-items:start;gap:12px}
+.progress{display:flex;flex-direction:column;gap:6px}
+.pips{display:flex;gap:6px}
+.pip{width:26px;height:26px;border-radius:8px;background:rgba(246,241,255,.14);display:flex;align-items:center;justify-content:center;font-family:var(--display);font-size:.85rem;color:var(--ink)}
+.pip.win{background:var(--ok)} .pip.lose{background:var(--danger)}
+.progress span{font-size:.72rem;letter-spacing:.14em;text-transform:uppercase;color:var(--muted)}
+.ref{background:rgba(14,11,31,.72);border-radius:16px;padding:8px 14px 10px;display:flex;flex-direction:column;align-items:center;gap:2px;min-width:0}
+.ref small{font-size:.7rem;letter-spacing:.16em;color:var(--muted);text-transform:uppercase}
+.ref strong{font-family:var(--display);font-size:clamp(1rem,2.6vw,1.4rem);letter-spacing:.03em;text-align:center;text-wrap:balance}
+#refCv{width:150px;height:84px;display:block}
+.timer{justify-self:end;display:flex;flex-direction:column;align-items:flex-end}
+#timeTxt{font-family:var(--display);font-size:clamp(2.6rem,min(9vw,16vh),5rem);line-height:1;font-variant-numeric:tabular-nums;text-shadow:0 5px 0 rgba(0,0,0,.4)}
+#timeTxt.hurry{color:var(--danger)}
+.timer span{font-size:.72rem;letter-spacing:.14em;text-transform:uppercase;color:var(--muted)}
+.hud-bottom{display:grid;grid-template-columns:1fr auto 1fr;align-items:end;gap:12px}
+.pm{display:flex;flex-direction:column;gap:4px;max-width:260px}
+.pm.r{justify-self:end;align-items:flex-end;text-align:right}
+.pm b{font-family:var(--display);font-size:1.6rem;font-variant-numeric:tabular-nums;line-height:1}
+.pm.p1 b{color:var(--p1)} .pm.p2 b{color:var(--p2)}
+.pm span{font-size:.72rem;letter-spacing:.14em;text-transform:uppercase;color:var(--muted)}
+.bar{width:min(240px,30vw);height:12px;border-radius:99px;background:rgba(246,241,255,.15);overflow:hidden;position:relative}
+.bar i{display:block;height:100%;width:0;transition:width .1s linear}
+.bar::after{content:"";position:absolute;top:-2px;bottom:-2px;left:90%;width:2px;background:var(--paper)}
+.p1 .bar i{background:var(--p1)} .p2 .bar i{background:var(--p2)}
+.pm.r .bar i{margin-left:auto}
+#holdWrap{display:flex;flex-direction:column;align-items:center;gap:4px}
+#holdTxt{font-family:var(--display);font-size:1rem;letter-spacing:.06em;color:var(--muted);min-height:1.2em}
+.hold{width:min(200px,24vw);height:8px;border-radius:99px;background:rgba(246,241,255,.15);overflow:hidden}
+.hold i{display:block;height:100%;width:0;background:var(--ok)}
+
+/* Banners */
+#banner{position:absolute;inset:0;z-index:6;display:flex;align-items:center;justify-content:center;pointer-events:none;padding:0 16px}
+#banner div{display:flex;flex-direction:column;align-items:center;gap:6px;text-align:center}
+#banner b{font-family:var(--display);font-size:clamp(3rem,13vw,9rem);line-height:1;text-shadow:0 8px 0 rgba(0,0,0,.4)}
+#banner span{font-family:var(--display);font-size:clamp(1rem,3.5vw,1.8rem);letter-spacing:.04em;background:rgba(14,11,31,.75);padding:6px 14px;border-radius:12px}
+#banner.ok b{color:var(--ok)} #banner.fail b{color:var(--danger)} #banner.info b{color:var(--paper)}
+#banner .anim{animation:pop .7s cubic-bezier(.2,1.5,.4,1) both}
+@keyframes pop{0%{transform:scale(2.2);opacity:0}100%{transform:scale(1);opacity:1}}
+#flash{position:absolute;inset:0;z-index:4;pointer-events:none;background:radial-gradient(circle,rgba(61,255,176,.5),transparent 70%);opacity:0}
+#flash.on{animation:fl 1s ease-out}
+@keyframes fl{0%{opacity:1}100%{opacity:0}}
+
+/* Lobby */
+#lobby{position:absolute;left:0;right:0;top:calc(env(safe-area-inset-top,0px) + 16px);z-index:4;display:flex;justify-content:center;padding:0 16px;pointer-events:none}
+.callout{background:rgba(14,11,31,.8);border-radius:16px;padding:12px 18px;text-align:center;max-width:480px;display:flex;flex-direction:column;gap:6px}
+.callout strong{font-family:var(--display);font-size:1.2rem;letter-spacing:.03em}
+.callout span{color:var(--muted);line-height:1.4}
+.chips{display:flex;gap:10px;justify-content:center}
+.chip{font-family:var(--display);font-size:.85rem;padding:6px 12px;border-radius:99px;background:rgba(246,241,255,.1);color:var(--muted)}
+.chip.on1{background:var(--p1);color:var(--ink)} .chip.on2{background:var(--p2);color:var(--ink)}
+
+/* Screens */
+.screen{position:absolute;inset:0;z-index:7;display:flex;align-items:flex-start;justify-content:center;overflow-y:auto;
+  padding:calc(env(safe-area-inset-top,0px) + 20px) 16px calc(env(safe-area-inset-bottom,0px) + 20px)}
+.panel{width:min(760px,100%);margin-block:auto;display:flex;flex-direction:column;gap:16px;align-items:center;text-align:center}
+#intro{background:radial-gradient(circle at 25% 15%,#2A1F55 0%,var(--ink) 60%)}
+.logo{display:flex;align-items:flex-end;gap:10px}
+.logo canvas{width:min(280px,60vw);height:auto}
+h1{font-family:var(--display);font-size:clamp(1.6rem,5vw,2.4rem);margin:0;letter-spacing:.03em;text-wrap:balance}
+h1 .a{color:var(--p1)} h1 .b{color:var(--p2)}
+.lead{margin:0;color:var(--muted);font-size:1.02rem;line-height:1.5;max-width:56ch}
+.steps{list-style:none;margin:0;padding:0;display:grid;grid-template-columns:repeat(auto-fit,minmax(190px,1fr));gap:10px;width:100%;text-align:left}
+.steps li{display:grid;grid-template-columns:2rem 1fr;gap:10px;align-items:start;background:var(--ink-2);border-radius:14px;padding:12px 14px}
+.steps li b{font-family:var(--display);font-size:1.3rem;color:var(--p2);line-height:1.1}
+.steps li p{margin:0;line-height:1.45;min-width:0}
+.steps li strong{display:block}
+.steps li span{color:var(--muted);font-size:.92rem}
+.btn{pointer-events:auto;font-family:var(--display);font-size:1.1rem;letter-spacing:.04em;border:0;border-radius:16px;padding:15px 26px;
+  background:var(--p2);color:var(--ink);cursor:pointer;box-shadow:0 6px 0 #B8901A;transition:transform .08s,box-shadow .08s}
+.btn:active{transform:translateY(4px);box-shadow:0 2px 0 #B8901A}
+.btn:focus-visible{outline:3px solid var(--paper);outline-offset:3px}
+.btn.ghost{background:transparent;color:var(--paper);box-shadow:inset 0 0 0 2px rgba(246,241,255,.35)}
+.note{font-size:.85rem;color:var(--muted);margin:0}
+.err{color:var(--danger);font-weight:700;margin:0;line-height:1.45}
+#loading{background:rgba(14,11,31,.88);align-items:center}
+.spin{width:54px;height:54px;border-radius:50%;border:6px solid rgba(246,241,255,.15);border-top-color:var(--p2);animation:sp 1s linear infinite}
+@keyframes sp{to{transform:rotate(360deg)}}
+#result{background:rgba(14,11,31,.94)}
+.verdict{display:flex;flex-direction:column;gap:4px;align-items:center;padding:14px 22px;border-radius:18px;animation:pop .6s cubic-bezier(.2,1.5,.4,1) both}
+.verdict.win{background:linear-gradient(135deg,var(--p1),var(--p2));color:var(--ink)}
+.verdict.lose{background:var(--ink-2);box-shadow:inset 0 0 0 2px var(--danger)}
+.verdict strong{font-family:var(--display);font-size:clamp(1.4rem,5vw,2.2rem);line-height:1.1;text-wrap:balance}
+.verdict span{font-weight:700}
+.collage{width:100%;border-radius:14px;overflow:hidden;box-shadow:0 12px 36px rgba(0,0,0,.5)}
+.collage canvas{display:block;width:100%;height:auto}
+.row{display:flex;gap:12px;flex-wrap:wrap;justify-content:center}
+#confetti{position:fixed;inset:0;width:100%;height:100%;z-index:9;pointer-events:none}
+
+/* Rotate lock */
+#rotate{position:fixed;inset:0;z-index:30;background:var(--ink);display:flex;flex-direction:column;align-items:center;justify-content:center;gap:22px;padding:24px 16px;text-align:center}
+.phone{width:64px;height:110px;border-radius:12px;border:5px solid var(--paper);position:relative;animation:turn 1.8s ease-in-out infinite}
+.phone::before{content:"";position:absolute;left:50%;top:6px;width:16px;height:4px;margin-left:-8px;border-radius:4px;background:var(--paper)}
+@keyframes turn{0%,20%{transform:rotate(0)}55%,100%{transform:rotate(-90deg)}}
+#rotate strong{font-family:var(--display);font-size:1.5rem}
+#rotate p{margin:0;color:var(--muted);max-width:32ch;line-height:1.5}
+@media (max-height:480px){ #refCv{width:120px;height:66px} .ref{padding:6px 10px} }
+@media (prefers-reduced-motion:reduce){.phone,#banner .anim,.verdict{animation:none}}
+</style>
+</head>
+<body>
+<div id="stage">
+  <video id="cam" playsinline muted autoplay></video>
+  <canvas id="fx"></canvas>
+  <div id="flash"></div>
+
+  <div id="hud" hidden>
+    <div class="hud-top">
+      <div class="progress">
+        <div class="pips" id="pips"></div>
+        <span>3 dáng chuẩn để thắng</span>
+      </div>
+      <div class="ref">
+        <small id="roundTxt">DÁNG 1</small>
+        <strong id="poseName">CHỮ Y</strong>
+        <canvas id="refCv" width="300" height="168"></canvas>
+      </div>
+      <div class="timer"><div id="timeTxt">10</div><span>giây</span></div>
+    </div>
+    <div class="hud-bottom">
+      <div class="pm p1"><span>Người 1</span><b id="s1">0%</b><div class="bar"><i id="b1"></i></div></div>
+      <div id="holdWrap"><div id="holdTxt"></div><div class="hold"><i id="holdBar"></i></div></div>
+      <div class="pm p2 r"><span>Người 2</span><b id="s2">0%</b><div class="bar"><i id="b2"></i></div></div>
+    </div>
+  </div>
+
+  <div id="lobby" hidden>
+    <div class="callout">
+      <strong id="lobbyTitle">CẦN 2 NGƯỜI</strong>
+      <span id="lobbySub">Hai người đứng cạnh nhau, lùi lại cho camera thấy từ đầu tới ít nhất thắt lưng.</span>
+      <div class="chips"><span class="chip" id="chip1">NGƯỜI 1</span><span class="chip" id="chip2">NGƯỜI 2</span></div>
+    </div>
+  </div>
+
+  <div id="banner" hidden><div><b id="bannerBig">3</b><span id="bannerSmall" hidden></span></div></div>
+
+  <section class="screen" id="intro">
+    <div class="panel">
+      <div class="logo"><canvas id="logoCv" width="560" height="300"></canvas></div>
+      <h1><span class="a">SIX</span> <span class="b">SEVEN</span> POSE</h1>
+      <p class="lead">Trò chơi cho 2 người. Mỗi lượt màn hình hiện một đôi khung xương mẫu. Cả hai có 10 giây để tạo dáng cho khớp, mỗi người phải đạt từ 90% trở lên.</p>
+      <ol class="steps">
+        <li><b>1</b><p><strong>Dựng máy nằm ngang</strong><span>Đặt ngang ngực, lùi lại cho camera thấy cả hai người.</span></p></li>
+        <li><b>2</b><p><strong>Đứng cạnh nhau</strong><span>Người bên trái màn hình là Người 1, bên phải là Người 2.</span></p></li>
+        <li><b>3</b><p><strong>Khớp dáng trong 10 giây</strong><span>Cả hai đạt 90% và giữ yên một chút là qua lượt.</span></p></li>
+        <li><b>4</b><p><strong>Đủ 3 dáng là thắng</strong><span>Kho có 10 dáng ngẫu nhiên. Trượt 3 lượt là thua.</span></p></li>
+      </ol>
+      <button class="btn" id="startBtn" type="button">BẬT CAMERA &amp; CHƠI</button>
+      <p class="err" id="introErr" hidden></p>
+      <p class="note">Hình ảnh chỉ xử lý ngay trên máy bạn, không gửi đi đâu.</p>
+    </div>
+  </section>
+
+  <section class="screen" id="loading" hidden>
+    <div class="panel"><div class="spin"></div><p class="lead" id="loadTxt">Đang tải bộ nhận diện cơ thể…</p></div>
+  </section>
+
+  <section class="screen" id="result" hidden>
+    <div class="panel">
+      <div class="verdict" id="verdict"><strong id="vTitle">THẮNG RỒI!</strong><span id="vSub"></span></div>
+      <div class="collage"><canvas id="collage" width="1200" height="800"></canvas></div>
+      <div class="row">
+        <button class="btn" id="againBtn" type="button">CHƠI LẠI</button>
+        <button class="btn ghost" id="saveBtn" type="button">LƯU ẢNH</button>
+      </div>
+    </div>
+  </section>
+</div>
+
+<canvas id="confetti" hidden></canvas>
+<div id="rotate" hidden role="alertdialog" aria-label="Xoay ngang điện thoại">
+  <div class="phone"></div>
+  <strong>XOAY NGANG ĐIỆN THOẠI</strong>
+  <p>Six Seven Pose chỉ chơi ở chiều ngang để camera thấy đủ cả hai người. Tắt khoá xoay màn hình nếu đang bật.</p>
+</div>
+
+<script type="module">
+import { PoseLandmarker, FilesetResolver } from "https://cdn.jsdelivr.net/npm/@mediapipe/tasks-vision@0.10.14/vision_bundle.mjs";
+
+/* ---------- Rules ---------- */
+const ROUND_MS = 10000;
+const NEED_WINS = 3, MAX_FAILS = 3;
+const PASS = .90;          // each player must reach 90%
+const HOLD_MS = 400;       // and both hold it this long
+const $ = id => document.getElementById(id);
+const COL = ['#FF5A36', '#FFD23F'], OK = '#3DFFB0', BAD = '#FF3D6E';
+
+/* ---------- Pose library ----------
+   Angles in degrees, screen space as the players see themselves (mirror view):
+   0 = pointing to screen right, 90 = down, 180 = screen left, -90 = up.
+   l* = limb on the screen-left side of that person, r* = screen-right side.
+   u = upper arm, f = forearm, t = thigh, s = shin, lean = torso tilt (+ = top leans right). */
+const LEGS = { lt:95, ls:95, rt:85, rs:85 };
+const mirror = p => {
+  const m = a => a == null ? a : ((180 - a + 540) % 360) - 180;
+  return { lu:m(p.ru), lf:m(p.rf), ru:m(p.lu), rf:m(p.lf), lt:m(p.rt ?? LEGS.rt), ls:m(p.rs ?? LEGS.rs), rt:m(p.lt ?? LEGS.lt), rs:m(p.ls ?? LEGS.ls), lean:-(p.lean || 0), legs:p.legs };
+};
+const P = (o) => ({ ...LEGS, lean:0, ...o });
+const POSES = [
+  { name:'CHỮ Y', a:P({ lu:-130, lf:-130, ru:-50, rf:-50 }) },
+  { name:'TRÁI TIM ĐÔI', a:P({ lu:120, lf:40, ru:-80, rf:-10 }) },
+  { name:'SIÊU NHÂN', a:P({ lu:-95, lf:-95, ru:60, rf:140 }) },
+  { name:'DISCO', a:P({ lu:135, lf:135, ru:-45, rf:-45 }) },
+  { name:'KHOE CƠ BẮP', a:P({ lu:180, lf:-90, ru:0, rf:-90 }), b:P({ lu:180, lf:-90, ru:0, rf:-90 }) },
+  { name:'CHỮ T VÀ CHỮ I', a:P({ lu:180, lf:180, ru:0, rf:0 }), b:P({ lu:-95, lf:-95, ru:-85, rf:-85 }) },
+  { name:'CHỈ MẶT NHAU', a:P({ lu:95, lf:95, ru:0, rf:0 }) },
+  { name:'A LÔ A LÔ', a:P({ lu:110, lf:-70, ru:80, rf:80 }) },
+  { name:'CẦU VỒNG', a:P({ lu:-60, lf:-10, ru:100, rf:100, lean:14 }) },
+  { name:'ROBOT', a:P({ lu:180, lf:90, ru:0, rf:-90 }), b:P({ lu:180, lf:-90, ru:0, rf:90 }) },
+].map(p => ({ name:p.name, t:[p.a, p.b || mirror(p.a)] }));
+
+/* ---------- Skeleton geometry ---------- */
+const BONES = [[11,12],[11,13],[13,15],[12,14],[14,16],[11,23],[12,24],[23,24],[23,25],[25,27],[24,26],[26,28]];
+const SEGS = [
+  { k:'lu', a:11, b:13, w:1.2 }, { k:'lf', a:13, b:15, w:1 },
+  { k:'ru', a:12, b:14, w:1.2 }, { k:'rf', a:14, b:16, w:1 },
+  { k:'lt', a:23, b:25, w:.6, opt:true }, { k:'ls', a:25, b:27, w:.5, opt:true },
+  { k:'rt', a:24, b:26, w:.6, opt:true }, { k:'rs', a:26, b:28, w:.5, opt:true },
+];
+const rad = d => d * Math.PI / 180;
+const dir = d => ({ x:Math.cos(rad(d)), y:Math.sin(rad(d)) });
+function buildSkeleton(p, ax, ay, s){
+  const lean = p.lean || 0;
+  const down = dir(90 + lean), across = dir(lean);
+  const pt = {};
+  pt[11] = { x:ax - across.x * s / 2, y:ay - across.y * s / 2 };
+  pt[12] = { x:ax + across.x * s / 2, y:ay + across.y * s / 2 };
+  const hx = ax + down.x * 1.3 * s, hy = ay + down.y * 1.3 * s;
+  pt[23] = { x:hx - across.x * .32 * s, y:hy - across.y * .32 * s };
+  pt[24] = { x:hx + across.x * .32 * s, y:hy + across.y * .32 * s };
+  const add = (from, ang, len) => { const d = dir(ang); return { x:from.x + d.x * len * s, y:from.y + d.y * len * s }; };
+  pt[13] = add(pt[11], p.lu, .72); pt[15] = add(pt[13], p.lf, .68);
+  pt[14] = add(pt[12], p.ru, .72); pt[16] = add(pt[14], p.rf, .68);
+  pt[25] = add(pt[23], p.lt, .95); pt[27] = add(pt[25], p.ls, .9);
+  pt[26] = add(pt[24], p.rt, .95); pt[28] = add(pt[26], p.rs, .9);
+  pt.head = { x:ax - down.x * .55 * s, y:ay - down.y * .55 * s, r:.27 * s };
+  return pt;
+}
+const angDiff = (a, b) => Math.abs(((a - b + 540) % 360) - 180);
+// within 15° counts as a perfect match, then credit falls to zero at 90° off
+const segSim = d => d <= 15 ? 1 : Math.max(0, 1 - (d - 15) / 75);
+function scorePerson(L, target){
+  let sum = 0, wsum = 0; const segs = {};
+  for (const sg of SEGS){
+    const A = L[sg.a], B = L[sg.b];
+    const vis = A.v > .5 && B.v > .5;
+    if (sg.opt && !vis) continue;
+    let sim = 0;
+    if (vis){
+      const m = Math.atan2(B.y - A.y, B.x - A.x) * 180 / Math.PI;
+      sim = segSim(angDiff(m, target[sg.k]));
+    }
+    segs[sg.k] = sim; sum += sim * sg.w; wsum += sg.w;
+  }
+  // torso lean, only when hips are in view
+  if (L[23].v > .5 && L[24].v > .5){
+    const mx = (L[11].x + L[12].x) / 2, my = (L[11].y + L[12].y) / 2;
+    const hx = (L[23].x + L[24].x) / 2, hy = (L[23].y + L[24].y) / 2;
+    const m = Math.atan2(hy - my, hx - mx) * 180 / Math.PI;
+    const sim = segSim(angDiff(m, 90 + (target.lean || 0)));
+    segs.torso = sim; sum += sim * .8; wsum += .8;
+  }
+  return { score: wsum ? sum / wsum : 0, segs };
+}
+
+/* ---------- Sound ---------- */
+let ac = null, master = null;
+function audioInit(){ if (ac) return; ac = new (window.AudioContext || window.webkitAudioContext)(); master = ac.createGain(); master.gain.value = .5; master.connect(ac.destination); }
+function tone(f, dur, { type='square', vol=.16, at=0, to=null } = {}){
+  if (!ac) return;
+  const t = ac.currentTime + at, o = ac.createOscillator(), g = ac.createGain();
+  o.type = type; o.frequency.setValueAtTime(f, t); if (to) o.frequency.exponentialRampToValueAtTime(to, t + dur);
+  g.gain.setValueAtTime(0, t); g.gain.linearRampToValueAtTime(vol, t + .005); g.gain.exponentialRampToValueAtTime(.0001, t + dur);
+  o.connect(g); g.connect(master); o.start(t); o.stop(t + dur + .02);
+}
+function noise(dur, { vol=.15, at=0, hp=1500 } = {}){
+  if (!ac) return;
+  const t = ac.currentTime + at, n = Math.floor(ac.sampleRate * dur), buf = ac.createBuffer(1, n, ac.sampleRate), d = buf.getChannelData(0);
+  for (let i = 0; i < n; i++) d[i] = (Math.random() * 2 - 1) * (1 - i / n);
+  const s = ac.createBufferSource(), f = ac.createBiquadFilter(), g = ac.createGain();
+  f.type = 'highpass'; f.frequency.value = hp; g.gain.value = vol; s.buffer = buf; s.connect(f); f.connect(g); g.connect(master); s.start(t);
+}
+const sfx = {
+  ready(){ [523,659,784].forEach((f,i)=>tone(f,.08,{at:i*.06,vol:.12})); },
+  beep(){ tone(440,.18,{vol:.2}); },
+  go(){ [523,659,784,1046].forEach((f,i)=>tone(f,.14,{at:i*.05})); noise(.2,{vol:.1}); },
+  pose(){ tone(659,.1,{vol:.14}); tone(988,.18,{at:.1,vol:.14}); },
+  tick(){ tone(900,.05,{type:'triangle',vol:.1}); },
+  tickHot(){ tone(1400,.07,{vol:.14}); },
+  near(){ tone(1200,.03,{type:'triangle',vol:.05}); },
+  clear(){ [784,988,1175,1568].forEach((f,i)=>tone(f,.12,{at:i*.07,vol:.15})); noise(.35,{at:.25,vol:.1,hp:3000}); },
+  fail(){ tone(330,.25,{type:'sawtooth',vol:.15,to:220}); tone(220,.4,{type:'sawtooth',vol:.15,at:.22,to:110}); },
+  win(){ [[523,0],[659,.12],[784,.24],[1046,.36],[784,.52],[1046,.64]].forEach(([f,a])=>tone(f,.16,{at:a,vol:.14})); tone(1318,.7,{at:.8,vol:.12,type:'triangle'}); noise(.5,{at:.8,vol:.1,hp:3000}); },
+  lose(){ [392,370,349,330].forEach((f,i)=>tone(f,.35,{type:'sawtooth',vol:.13,at:i*.32,to:i===3?220:null})); },
+};
+
+/* ---------- Canvas / mapping ---------- */
+const video = $('cam'), fx = $('fx'), ctx = fx.getContext('2d');
+let W = 0, H = 0, DPR = 1;
+function resize(){ DPR = Math.min(devicePixelRatio || 1, 2); W = fx.clientWidth; H = fx.clientHeight; fx.width = W * DPR; fx.height = H * DPR; ctx.setTransform(DPR,0,0,DPR,0,0); }
+addEventListener('resize', resize); resize();
+function toScreen(p){
+  const vw = video.videoWidth || 1280, vh = video.videoHeight || 720;
+  const s = Math.max(W / vw, H / vh), dw = vw * s, dh = vh * s, ox = (W - dw) / 2, oy = (H - dh) / 2;
+  return { x: W - (p.x * dw + ox), y: p.y * dh + oy, v: p.visibility ?? 1 };
+}
+
+/* ---------- Orientation ---------- */
+const portraitMQ = matchMedia('(orientation: portrait) and (pointer: coarse)');
+let locked = false;
+function checkOrient(){ locked = portraitMQ.matches; $('rotate').hidden = !locked; }
+portraitMQ.addEventListener ? portraitMQ.addEventListener('change', checkOrient) : portraitMQ.addListener(checkOrient);
+addEventListener('resize', checkOrient); checkOrient();
+async function tryLandscape(){
+  try {
+    if (!matchMedia('(pointer: coarse)').matches) return;
+    if (document.documentElement.requestFullscreen && !document.fullscreenElement) await document.documentElement.requestFullscreen();
+    if (screen.orientation && screen.orientation.lock) await screen.orientation.lock('landscape');
+  } catch {}
+}
+
+/* ---------- Pose model ---------- */
+let pose = null;
+async function loadPose(){
+  const files = await FilesetResolver.forVisionTasks("https://cdn.jsdelivr.net/npm/@mediapipe/tasks-vision@0.10.14/wasm");
+  const opts = d => ({
+    baseOptions:{ modelAssetPath:"https://storage.googleapis.com/mediapipe-models/pose_landmarker/pose_landmarker_lite/float16/1/pose_landmarker_lite.task", delegate:d },
+    runningMode:"VIDEO", numPoses:2, minPoseDetectionConfidence:.5, minPosePresenceConfidence:.5, minTrackingConfidence:.5
+  });
+  try { pose = await PoseLandmarker.createFromOptions(files, opts("GPU")); }
+  catch { pose = await PoseLandmarker.createFromOptions(files, opts("CPU")); }
+}
+async function startCamera(){
+  const stream = await navigator.mediaDevices.getUserMedia({ video:{ facingMode:'user', width:{ ideal:1280 }, height:{ ideal:720 } }, audio:false });
+  video.srcObject = stream; await video.play();
+  await new Promise(r => video.readyState >= 2 ? r() : video.onloadeddata = r);
+  resize();
+}
+
+/* ---------- State ---------- */
+let state = 'intro';       // intro | loading | lobby | countdown | game | result
+let people = [];           // [{L, S, cx}] sorted left→right on screen
+let lobbyHold = 0, lastT = performance.now();
+let G = null;              // game
+let R = null;              // current round
+const timeouts = [];
+const later = (fn, ms) => timeouts.push(setTimeout(fn, ms));
+const clearLater = () => { while (timeouts.length) clearTimeout(timeouts.pop()); };
+
+function setState(s){
+  state = s;
+  $('intro').hidden = s !== 'intro'; $('loading').hidden = s !== 'loading';
+  $('lobby').hidden = s !== 'lobby'; $('hud').hidden = s !== 'game';
+  $('result').hidden = s !== 'result';
+  if (s !== 'countdown' && s !== 'game') $('banner').hidden = true;
+}
+function banner(big, small, cls){
+  const b = $('banner'), bb = $('bannerBig'), bs = $('bannerSmall');
+  b.hidden = false; b.className = cls || 'info';
+  bb.textContent = big; bb.classList.remove('anim'); void bb.offsetWidth; bb.classList.add('anim');
+  bs.hidden = !small; bs.textContent = small || '';
+}
+const hideBanner = () => { $('banner').hidden = true; };
+
+function shuffle(a){ a = a.slice(); for (let i = a.length - 1; i > 0; i--){ const j = Math.floor(Math.random() * (i + 1)); [a[i], a[j]] = [a[j], a[i]]; } return a; }
+
+/* ---------- Flow ---------- */
+$('startBtn').onclick = async () => {
+  audioInit(); if (ac.state === 'suspended') ac.resume(); sfx.ready(); tryLandscape();
+  $('introErr').hidden = true; setState('loading');
+  try {
+    $('loadTxt').textContent = 'Đang mở camera…'; await startCamera();
+    $('loadTxt').textContent = 'Đang tải bộ nhận diện cơ thể…';
+    await Promise.all([loadPose(), document.fonts.load('40px Bungee').catch(()=>{})]);
+    toLobby(); requestAnimationFrame(loop);
+  } catch (e) {
+    setState('intro'); const err = $('introErr'); err.hidden = false;
+    err.textContent = e && e.name === 'NotAllowedError' ? 'Camera bị chặn. Cho phép quyền camera cho trang này rồi bấm lại.'
+      : e && (e.name === 'NotFoundError' || e.name === 'NotReadableError') ? 'Không mở được camera. Kiểm tra xem có ứng dụng khác đang dùng camera không.'
+      : 'Không tải được bộ nhận diện. Kiểm tra kết nối mạng rồi thử lại.';
+  }
+};
+$('againBtn').onclick = () => { audioInit(); sfx.ready(); toLobby(); };
+$('saveBtn').onclick = () => {
+  $('collage').toBlob(b => {
+    if (!b) return;
+    const a = document.createElement('a'); a.href = URL.createObjectURL(b); a.download = 'six-seven-pose.png';
+    document.body.appendChild(a); a.click(); a.remove(); setTimeout(() => URL.revokeObjectURL(a.href), 2000);
+  }, 'image/png');
+};
+
+function toLobby(){ clearLater(); lobbyHold = 0; G = null; R = null; setState('lobby'); }
+
+function startGame(){
+  setState('countdown');
+  ['3','2','1'].forEach((t, i) => later(() => { banner(t, null, 'info'); sfx.beep(); }, i * 850));
+  later(() => {
+    G = { deck: shuffle(POSES), wins:0, fails:0, rounds:[], idx:0 };
+    sfx.go(); setState('game'); renderPips(); nextRound();
+  }, 3 * 850);
+}
+
+function nextRound(){
+  const pose = G.deck[G.idx++ % G.deck.length];
+  R = { pose, phase:'intro', start:0, pausedAt:0, sm:[0,0], hold:0, best:0, lastTick:-1,
+        snap: document.createElement('canvas'), snapScore:-1, lastSnap:0 };
+  R.snap.width = 480; R.snap.height = 300;
+  $('roundTxt').textContent = 'DÁNG ' + (G.rounds.length + 1);
+  $('poseName').textContent = pose.name;
+  drawRef(pose);
+  $('timeTxt').textContent = '10'; $('timeTxt').classList.remove('hurry');
+  banner(pose.name, 'Chuẩn bị tạo dáng!', 'info'); sfx.pose();
+  later(() => { hideBanner(); R.phase = 'pose'; R.start = performance.now(); }, 1500);
+}
+
+function endRound(ok){
+  R.phase = 'done';
+  G.rounds.push({ name:R.pose.name, ok, best:Math.round(R.best * 100), snap:R.snap });
+  ok ? G.wins++ : G.fails++;
+  renderPips();
+  if (ok){ sfx.clear(); banner('CHUẨN!', 'Khớp dáng ' + R.pose.name, 'ok'); const f = $('flash'); f.classList.remove('on'); void f.offsetWidth; f.classList.add('on'); }
+  else { sfx.fail(); banner('HẾT GIỜ', 'Cao nhất ' + Math.round(R.best * 100) + '%', 'fail'); }
+  later(() => {
+    hideBanner();
+    if (G.wins >= NEED_WINS || G.fails >= MAX_FAILS) showResult();
+    else nextRound();
+  }, 1800);
+}
+
+function renderPips(){
+  const box = $('pips'); box.textContent = '';
+  const total = NEED_WINS + MAX_FAILS - 1;
+  for (let i = 0; i < total; i++){
+    const r = G && G.rounds[i], d = document.createElement('div');
+    d.className = 'pip' + (r ? (r.ok ? ' win' : ' lose') : '');
+    d.textContent = r ? (r.ok ? '✓' : '✗') : '';
+    box.appendChild(d);
+  }
+}
+
+function showResult(){
+  const win = G.wins >= NEED_WINS;
+  const v = $('verdict'); v.className = 'verdict ' + (win ? 'win' : 'lose');
+  $('vTitle').textContent = win ? 'THẮNG RỒI! 3 DÁNG CHUẨN' : 'THUA SÁT NÚT';
+  $('vSub').textContent = win ? `Qua ${G.wins} dáng sau ${G.rounds.length} lượt. Hai bạn ăn ý thật.` : `Mới qua ${G.wins}/3 dáng. Làm lại ván nữa?`;
+  drawCollage(win);
+  setState('result');
+  if (win){ sfx.win(); confetti(); } else sfx.lose();
+}
+
+/* ---------- Snapshot helpers ---------- */
+function snapInto(cv){
+  const vw = video.videoWidth, vh = video.videoHeight; if (!vw) return;
+  const c = cv.getContext('2d'), tw = cv.width, th = cv.height, s = Math.max(tw / vw, th / vh), dw = vw * s, dh = vh * s;
+  c.save(); c.translate(tw, 0); c.scale(-1, 1); c.drawImage(video, (tw - dw) / 2, (th - dh) / 2, dw, dh); c.restore();
+}
+function drawCollage(win){
+  const cv = $('collage'), c = cv.getContext('2d');
+  const n = G.rounds.length, cols = Math.min(3, n), rows = Math.ceil(n / 3);
+  const tw = 360, th = 225, gap = 24, top = 120, lab = 52;
+  cv.width = Math.max(cols * tw + (cols + 1) * gap, 900);
+  cv.height = top + rows * (th + lab + gap) + gap;
+  c.fillStyle = '#0E0B1F'; c.fillRect(0, 0, cv.width, cv.height);
+  c.font = '44px Bungee, Impact, sans-serif'; c.textBaseline = 'alphabetic'; c.textAlign = 'left';
+  c.fillStyle = COL[0]; c.fillText('SIX', gap, 72);
+  c.fillStyle = COL[1]; c.fillText('SEVEN', gap + c.measureText('SIX ').width, 72);
+  c.fillStyle = '#F6F1FF'; c.fillText('POSE', gap + c.measureText('SIX SEVEN ').width, 72);
+  c.textAlign = 'right'; c.font = '30px Bungee, Impact, sans-serif';
+  c.fillStyle = win ? OK : BAD; c.fillText(win ? 'THẮNG ' + G.wins + '/3' : 'THUA ' + G.wins + '/3', cv.width - gap, 70);
+  const rowW = cols * tw + (cols - 1) * gap, x0 = (cv.width - rowW) / 2;
+  G.rounds.forEach((r, i) => {
+    const col = i % 3, row = Math.floor(i / 3);
+    const x = x0 + col * (tw + gap), y = top + row * (th + lab + gap);
+    c.drawImage(r.snap, x, y, tw, th);
+    c.lineWidth = 6; c.strokeStyle = r.ok ? OK : BAD; c.strokeRect(x + 3, y + 3, tw - 6, th - 6);
+    c.textAlign = 'left'; c.font = '22px Bungee, Impact, sans-serif'; c.fillStyle = '#F6F1FF';
+    c.fillText(r.name, x, y + th + 32);
+    c.textAlign = 'right'; c.fillStyle = r.ok ? OK : BAD;
+    c.fillText((r.ok ? '✓ ' : '✗ ') + r.best + '%', x + tw, y + th + 32);
+  });
+}
+
+/* ---------- Confetti ---------- */
+function confetti(ms = 5500){
+  if (matchMedia('(prefers-reduced-motion: reduce)').matches) return;
+  const c = $('confetti'), x = c.getContext('2d'); c.hidden = false;
+  const w = c.width = innerWidth * DPR, h = c.height = innerHeight * DPR, cols = [COL[0], COL[1], OK, '#F6F1FF'];
+  const parts = Array.from({ length:200 }, (_, i) => ({ x:Math.random()*w, y:-Math.random()*h*.8, vx:(Math.random()-.5)*3*DPR, vy:(2+Math.random()*4)*DPR, r:Math.random()*6.28, vr:(Math.random()-.5)*.3, s:(6+Math.random()*8)*DPR, c:cols[i%4], d:Math.random()<.3 ? (i%2?'6':'7') : null }));
+  const t0 = performance.now();
+  (function step(t){
+    x.clearRect(0, 0, w, h);
+    for (const p of parts){
+      p.x += p.vx + Math.sin((t + p.s * 50) / 300) * DPR; p.y += p.vy; p.r += p.vr;
+      x.save(); x.translate(p.x, p.y); x.rotate(p.r); x.fillStyle = p.c;
+      if (p.d){ x.font = `${p.s*2.4}px Bungee, Impact, sans-serif`; x.textAlign = 'center'; x.fillText(p.d, 0, 0); } else x.fillRect(-p.s/2, -p.s/4, p.s, p.s/2);
+      x.restore();
+    }
+    if (t - t0 < ms) requestAnimationFrame(step); else { x.clearRect(0, 0, w, h); c.hidden = true; }
+  })(t0);
+}
+
+/* ---------- Drawing ---------- */
+function drawGhost(c, pt, s, color, alpha = 1){
+  c.save(); c.globalAlpha = alpha; c.lineCap = 'round'; c.lineJoin = 'round';
+  for (const pass of [0, 1]){
+    c.strokeStyle = pass ? 'rgba(246,241,255,.85)' : color;
+    c.lineWidth = pass ? Math.max(3, s * .07) : Math.max(7, s * .16);
+    for (const [a, b] of BONES){ c.beginPath(); c.moveTo(pt[a].x, pt[a].y); c.lineTo(pt[b].x, pt[b].y); c.stroke(); }
+    c.beginPath(); c.arc(pt.head.x, pt.head.y, pt.head.r, 0, Math.PI * 2); c.stroke();
+  }
+  c.restore();
+}
+function drawRef(p){
+  const cv = $('refCv'), c = cv.getContext('2d');
+  c.clearRect(0, 0, cv.width, cv.height);
+  const s = 34;
+  [0, 1].forEach(i => {
+    const sk = buildSkeleton(p.t[i], cv.width * (i ? .7 : .3), 52, s);
+    drawGhost(c, sk, s, COL[i]);
+  });
+}
+function drawLogo(){
+  const cv = $('logoCv'), c = cv.getContext('2d'), s = 70;
+  drawGhost(c, buildSkeleton(POSES[0].t[0], 170, 110, s), s, COL[0]);
+  drawGhost(c, buildSkeleton(POSES[3].t[1], 390, 110, s), s, COL[1]);
+}
+document.fonts.ready.then(drawLogo); drawLogo();
+
+function drawLive(L, segs){
+  ctx.save(); ctx.lineCap = 'round';
+  for (const [a, b] of BONES){
+    if (L[a].v < .5 || L[b].v < .5) continue;
+    const sg = SEGS.find(s => (s.a === a && s.b === b));
+    let col = 'rgba(246,241,255,.7)';
+    if (sg && segs && segs[sg.k] != null) col = segs[sg.k] >= .9 ? OK : segs[sg.k] >= .75 ? '#FFD23F' : BAD;
+    ctx.strokeStyle = col; ctx.lineWidth = 5;
+    ctx.beginPath(); ctx.moveTo(L[a].x, L[a].y); ctx.lineTo(L[b].x, L[b].y); ctx.stroke();
+  }
+  for (const i of [11,12,13,14,15,16,23,24,25,26,27,28]){
+    if (L[i].v < .5) continue;
+    ctx.fillStyle = '#0E0B1F'; ctx.beginPath(); ctx.arc(L[i].x, L[i].y, 6, 0, Math.PI * 2); ctx.fill();
+    ctx.fillStyle = '#F6F1FF'; ctx.beginPath(); ctx.arc(L[i].x, L[i].y, 3.5, 0, Math.PI * 2); ctx.fill();
+  }
+  ctx.restore();
+}
+function badge(x, y, txt, color){
+  ctx.save(); ctx.font = '22px Bungee, Impact, sans-serif'; ctx.textAlign = 'center'; ctx.textBaseline = 'middle';
+  const w = ctx.measureText(txt).width + 22;
+  ctx.fillStyle = 'rgba(14,11,31,.8)'; ctx.beginPath(); ctx.roundRect ? ctx.roundRect(x - w/2, y - 17, w, 34, 10) : ctx.rect(x - w/2, y - 17, w, 34); ctx.fill();
+  ctx.fillStyle = color; ctx.fillText(txt, x, y + 1); ctx.restore();
+}
+
+/* ---------- Main loop ---------- */
+let lastVideoTime = -1;
+function loop(now){
+  requestAnimationFrame(loop);
+  const dt = Math.min(100, now - lastT); lastT = now;
+
+  if (pose && video.readyState >= 2 && video.currentTime !== lastVideoTime){
+    lastVideoTime = video.currentTime;
+    try {
+      const res = pose.detectForVideo(video, now);
+      people = (res.landmarks || []).map(lm => {
+        const L = lm.map(toScreen);
+        const S = Math.hypot(L[11].x - L[12].x, L[11].y - L[12].y);
+        return { L, S, cx:(L[11].x + L[12].x) / 2, cy:(L[11].y + L[12].y) / 2 };
+      }).filter(p => p.L[11].v > .5 && p.L[12].v > .5 && p.S > 15).sort((a, b) => a.cx - b.cx);
+    } catch { people = []; }
+  }
+
+  ctx.clearRect(0, 0, W, H);
+
+  if (state === 'lobby'){
+    const two = people.length >= 2 && !locked;
+    $('chip1').className = 'chip' + (people.length >= 1 ? ' on1' : '');
+    $('chip2').className = 'chip' + (people.length >= 2 ? ' on2' : '');
+    if (two){ lobbyHold += dt; $('lobbyTitle').textContent = 'ĐỦ 2 NGƯỜI, GIỮ YÊN…'; $('lobbySub').textContent = 'Chuẩn bị nhìn khung xương mẫu và tạo dáng theo.'; }
+    else {
+      lobbyHold = Math.max(0, lobbyHold - dt * 2);
+      $('lobbyTitle').textContent = people.length === 1 ? 'MỚI THẤY 1 NGƯỜI' : 'CẦN 2 NGƯỜI';
+      $('lobbySub').textContent = 'Hai người đứng cạnh nhau, lùi lại cho camera thấy từ đầu tới ít nhất thắt lưng.';
+    }
+    people.slice(0, 2).forEach((p, i) => { drawLive(p.L, null); badge(p.cx, p.cy - p.S * 1.1, 'NGƯỜI ' + (i + 1), COL[i]); });
+    if (lobbyHold > 1200) startGame();
+    return;
+  }
+
+  if (state === 'countdown'){ people.slice(0, 2).forEach(p => drawLive(p.L, null)); return; }
+  if (state !== 'game' || !R) return;
+
+  // pause the clock while the phone is held upright
+  if (locked){ if (R.phase === 'pose' && !R.pausedAt) R.pausedAt = now; return; }
+  if (R.pausedAt){ R.start += now - R.pausedAt; R.pausedAt = 0; }
+
+  // ghosts: anchored on each player when visible, otherwise at a default spot
+  const ghostFor = i => {
+    const p = people[i];
+    const s = p ? p.S : Math.min(W, H) * .16;
+    const ax = p ? p.cx : W * (i ? .68 : .32), ay = p ? p.cy : H * .42;
+    return { pt: buildSkeleton(R.pose.t[i], ax, ay, s), s };
+  };
+  [0, 1].forEach(i => { const g = ghostFor(i); drawGhost(ctx, g.pt, g.s, COL[i], R.phase === 'intro' ? .9 : .45); });
+
+  const res = [0, 1].map(i => people[i] ? scorePerson(people[i].L, R.pose.t[i]) : null);
+  res.forEach((r, i) => {
+    const raw = r ? r.score : 0;
+    R.sm[i] = R.sm[i] * .7 + raw * .3;
+    if (people[i]){
+      drawLive(people[i].L, R.phase === 'pose' ? r.segs : null);
+      const pct = Math.round(R.sm[i] * 100);
+      badge(people[i].cx, people[i].cy - people[i].S * 1.15, pct + '%', R.sm[i] >= PASS ? OK : COL[i]);
+    }
+    $('s' + (i + 1)).textContent = Math.round(R.sm[i] * 100) + '%';
+    $('b' + (i + 1)).style.width = Math.round(R.sm[i] * 100) + '%';
+  });
+
+  if (R.phase !== 'pose') return;
+
+  const el = now - R.start, left = Math.max(0, ROUND_MS - el), sec = Math.ceil(left / 1000);
+  $('timeTxt').textContent = sec; $('timeTxt').classList.toggle('hurry', left <= 3000);
+  if (sec !== R.lastTick && sec > 0){ R.lastTick = sec; sec <= 3 ? sfx.tickHot() : sfx.tick(); }
+
+  const both = Math.min(R.sm[0], R.sm[1]);
+  if (both > R.best) R.best = both;
+  if (both >= R.snapScore && now - R.lastSnap > 200){ R.snapScore = both; R.lastSnap = now; snapInto(R.snap); }
+
+  const holdTxt = $('holdTxt');
+  if (people.length < 2){ holdTxt.textContent = 'CẦN ĐỦ 2 NGƯỜI'; holdTxt.style.color = BAD; }
+  else if (both >= PASS){ holdTxt.textContent = 'GIỮ YÊN!'; holdTxt.style.color = OK; }
+  else { holdTxt.textContent = R.sm[0] < R.sm[1] ? 'NGƯỜI 1 CHỈNH LẠI' : 'NGƯỜI 2 CHỈNH LẠI'; holdTxt.style.color = ''; }
+
+  if (both >= PASS && people.length >= 2){ if (R.hold === 0) sfx.near(); R.hold += dt; }
+  else R.hold = Math.max(0, R.hold - dt * 1.5);
+  $('holdBar').style.width = Math.min(100, R.hold / HOLD_MS * 100) + '%';
+
+  if (R.hold >= HOLD_MS){ snapInto(R.snap); R.best = Math.max(R.best, both); endRound(true); }
+  else if (left <= 0) endRound(false);
+}
+</script>
+</body>
+</html>

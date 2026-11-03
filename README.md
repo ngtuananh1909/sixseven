@@ -1,20 +1,52 @@
 # Six Seven — Camera Game Hub
 
-Website entry: `index.html` (links to `pose.html` and `pump.html`).
+Ứng dụng web camera gồm hai chế độ:
 
-- **Pose Battle:** original two-player, 90% per player, hold 400 ms, 10 seconds/round, three wins to succeed.
-- **Pump Challenge:** original one-player arm pumping game, 20 seconds, target 200 points.
+- **Pose Battle**: 2 người, 10 dáng mẫu, cần >=90% mỗi người và giữ 400 ms; thắng sau 3 lượt đúng, thua sau 3 lượt sai.
+- **Pump Challenge**: 1 người, 20 giây, bơm hai tay so le; tay trái nhận 6 điểm, tay phải nhận 7 điểm; mục tiêu 200 điểm.
 
-## Deployment
+## Repository structure
 
-1. Make the repository **Public** (Settings → General → Danger Zone → Change repository visibility).
-2. Set Settings → Pages → **Deploy from a branch** → `main` → `/(root)` → Save.
-3. Open `https://ngtuananh1909.github.io/sixseven/` once GitHub reports deployment success.
+| Path | Purpose |
+| --- | --- |
+| `index.html` | **All-in-one production website**: two modes, shared CameraManager / PoseEngine and game loop. No build required. |
+| `source/index.html` | Maintainable development entry point (ES modules). |
+| `source/src/` | Shared camera/AI/audio/canvas code, UI components and separate game implementations. |
+| `source/tests/` | Unit tests for scoring, motion detection and timers. |
+| `pose.html`, `pump.html` | Original standalone game snapshots for comparison, not used by the unified home page. |
+| `.nojekyll` | Serve static files without Jekyll processing. |
 
-Browsers require HTTPS and camera permission. The game uses MediaPipe from external CDNs.
+## GitHub Pages setup
 
-## Source status
+**Repository must support public GitHub Pages.** For simplest publication:
 
-This repository currently contains a **working-path deployment of the two original HTML games**, with a responsive landing page, not the full modular refactor. The modular CameraManager / PoseEngine / game component source is provided separately in the `six-seven-game-hub.zip` artifact from the ChatGPT conversation and should replace this initial deployment when transferred.
+1. Set repo visibility to **Public** under Settings → General → Danger Zone.
+2. Open **Settings → Pages**.
+3. Choose **Deploy from a branch**, branch **main**, folder **/(root)** and **Save**.
+4. When GitHub reports deployment success, open **https://ngtuananh1909.github.io/sixseven/**.
 
-The original games retain their original mobile limitations (portrait orientation locking, fixed front-facing camera preference and no camera switch UI). They have not been validated on physical iOS/Android devices.
+The root `index.html` contains inline CSS and bundled JavaScript, so GitHub Pages does not need Node/Vite. Google Fonts and MediaPipe WASM/model are fetched from external networks.
+
+To develop with the modular version, serve the `source/` folder:
+
+```bash
+cd source
+python3 -m http.server 8080
+npm test
+npm run check
+```
+
+The development `source/index.html` also works as a static website without a build step.
+
+## Camera notes
+
+- Camera access requires **HTTPS / localhost** and the user's permission.
+- Mobile supports portrait for Pump, while Pose works best in landscape for two people.
+- Camera selection and switching are available in the **CAM** control of the unified app, subject to browser and hardware support.
+- Frames are processed locally. Camera video is not uploaded by the game. The third-party MediaPipe library/model and fonts require network access.
+- Browser camera availability, FPS and saving results vary by device. **No guarantee for every camera model**.
+- Code-level checks and unit tests passed. **Actual iOS / Android camera performance has not been validated on hardware**.
+
+## Release notes
+
+2026-11-03: Unified mobile-oriented single-page app, shared camera and AI services, separate game modules, camera settings, pause/restart/release handling, scoring compatibility tests. The two original standalone HTML games remain available as references.

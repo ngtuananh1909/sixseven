@@ -1,0 +1,61 @@
+<!doctype html>
+<html lang="vi">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+  <meta name="theme-color" content="#0e0b1f">
+  <meta name="description" content="Six Seven: hai trò chơi tương tác với camera, hoạt động trên điện thoại và máy tính.">
+  <title>Six Seven — Camera Game Hub</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Bungee&family=Chakra+Petch:wght@500;700&display=swap" rel="stylesheet">
+  <link rel="stylesheet" href="./src/styles/global.css">
+  <script type="module" src="./src/main.js"></script>
+</head>
+<body>
+  <main id="home" class="home">
+    <div class="home-glow" aria-hidden="true"></div>
+    <div class="home-content">
+      <div class="eyebrow"><span class="pulse"></span> CAMERA MOTION ARCADE <span class="edition">2 GAME MODES</span></div>
+      <h1 class="hero"><span class="six">SIX</span><span class="seven">SEVEN</span></h1>
+      <p class="hero-sub">CHỌN TRÒ. BẬT CAMERA. BẮT NHỊP.</p>
+      <p class="hero-lead">Không cần tải ứng dụng. Đặt điện thoại trước mặt, mở camera và chơi ngay cùng bạn bè.</p>
+      <div class="mode-grid" role="group" aria-label="Chọn chế độ chơi">
+        <article class="mode-card pose-card">
+          <div class="mode-top"><span class="mode-icon" aria-hidden="true">✳</span><span class="mode-count">02 PLAYERS</span></div>
+          <div class="mode-art pose-art" aria-hidden="true"><span>╲◯╱</span><span>╱◯╲</span></div>
+          <h2>POSE BATTLE</h2>
+          <p>Cùng bạn bè tạo dáng theo khung xương mẫu. Đạt từ 90% mỗi người và giữ tư thế 400 ms để ghi điểm.</p>
+          <div class="mode-facts"><span>10 DÁNG MẪU</span><span>3 DÁNG ĐỂ THẮNG</span></div>
+          <button class="play-mode" type="button" data-game="pose">CHƠI POSE <span aria-hidden="true">↗</span></button>
+        </article>
+        <article class="mode-card pump-card">
+          <div class="mode-top"><span class="mode-icon" aria-hidden="true">⚡</span><span class="mode-count">01 PLAYER</span></div>
+          <div class="mode-art pump-art" aria-hidden="true"><span>6</span><span>7</span></div>
+          <h2>PUMP CHALLENGE</h2>
+          <p>Bơm hai tay so le đủ biên độ. Thu thập các số 6, 7 và chinh phục mục tiêu trong 20 giây.</p>
+          <div class="mode-facts"><span>20 GIÂY</span><span>200 ĐIỂM</span></div>
+          <button class="play-mode" type="button" data-game="pump">CHƠI PUMP <span aria-hidden="true">↗</span></button>
+        </article>
+      </div>
+      <footer class="home-foot"><span>◉ Xử lý tư thế ngay trên thiết bị</span><span>Camera cần quyền truy cập • HTTPS / localhost</span></footer>
+    </div>
+  </main>
+  <section id="gameMount" class="game-mount" aria-label="Trò chơi" hidden></section>
+  <nav id="gameNav" class="game-nav" aria-label="Điều khiển trò chơi" hidden>
+    <button id="backHome" class="float-control" type="button" aria-label="Về trang chủ" title="Về trang chủ">← <span>HOME</span></button>
+    <button id="cameraMenu" class="float-control" type="button" aria-label="Thiết lập camera" title="Thiết lập camera"><span aria-hidden="true">▣</span> <span>CAM</span></button>
+  </nav>
+  <aside id="cameraPanel" class="camera-panel" aria-label="Thiết lập camera" hidden>
+    <div class="camera-panel-title"><strong>THIẾT LẬP CAMERA</strong><button type="button" id="closeCameraPanel" aria-label="Đóng">×</button></div>
+    <label for="cameraSelect">Thiết bị video</label>
+    <select id="cameraSelect"><option value="">Tự động / camera mặc định</option></select>
+    <div class="camera-buttons"><button type="button" id="flipCamera">↻ Đổi trước / sau</button><button type="button" id="mirrorCamera">Tắt lật gương</button></div>
+    <p id="cameraInfo" role="status">Hãy bật camera trong trò chơi trước để xem danh sách.</p>
+  </aside>
+  <div id="deviceLost" class="device-lost" role="alertdialog" aria-modal="true" hidden>
+    <div class="device-lost-card"><strong>CAMERA BỊ NGẮT</strong><p id="deviceLostText">Không còn nhận được hình ảnh từ camera.</p><button id="cameraRetry" type="button">THỬ LẠI</button><button id="cameraGoHome" type="button">VỀ TRANG CHỦ</button></div>
+  </div>
+  <div id="mediaParking" hidden></div>
+</body>
+</html>

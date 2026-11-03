@@ -1,0 +1,12 @@
+{
+  "name":"six-seven-game-hub",
+  "version":"1.0.0",
+  "private":true,
+  "type":"module",
+  "description":"Six Seven Pose + Pump camera arcade; dependency-free static website",
+  "scripts":{
+    "start":"python3 -m http.server 8080 --bind 127.0.0.1",
+    "test":"node --test tests/*.test.js",
+    "check":"node --check src/main.js && node --check src/games/pose/pose-game.js && node --check src/games/pump/pump-game.js"
+  }
+}

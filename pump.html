@@ -93,6 +93,7 @@ h1{font-family:var(--display);font-size:clamp(1.4rem,6vw,2rem);margin:0;letter-s
 #count b{font-family:var(--display);font-size:clamp(9rem,45vw,20rem);color:var(--paper);text-shadow:0 10px 0 rgba(0,0,0,.4);line-height:1}
 #count b.go{color:var(--ok);font-size:clamp(6rem,30vw,14rem)}
 #count b.end{color:var(--danger);font-size:clamp(3.5rem,15vw,7rem);text-align:center}
+#count b.clear{color:var(--ok);font-size:clamp(3.5rem,15vw,7rem);text-align:center}
 #count b.anim{animation:cd .8s ease-out both}
 @keyframes cd{0%{transform:scale(2.2);opacity:0}25%{transform:scale(.95);opacity:1}100%{transform:scale(1);opacity:.85}}
 
@@ -153,7 +154,7 @@ h1{font-family:var(--display);font-size:clamp(1.4rem,6vw,2rem);margin:0;letter-s
       <div id="timeTxt">20.0</div>
       <div id="score">0</div>
       <div id="combo"></div>
-      <div class="goal">MỤC TIÊU <b>200</b></div>
+      <div class="goal">MỤC TIÊU <b>250</b></div>
     </div>
     <div class="hud-bottom">
       <div class="side s6"><b>6</b><em id="c6">0</em><span>tay trái</span></div>
@@ -183,7 +184,7 @@ h1{font-family:var(--display);font-size:clamp(1.4rem,6vw,2rem);margin:0;letter-s
         <li><b>1</b><p><strong>Dựng điện thoại nằm ngang</strong><span>Tựa vào đồ vật ngang ngực, camera trước thấy bạn từ thắt lưng trở lên.</span></p></li>
         <li><b>2</b><p><strong>Giơ hai tay lên</strong><span>Camera tự tìm cổ tay. Không cần bấm gì, không cần cầm gì.</span></p></li>
         <li><b>3</b><p><strong>Bơm so le, tay lên tay xuống</strong><span>Nhát phải đủ rộng, và hai tay phải lệch độ cao nhau. Hai tay ngang nhau hoặc lắc nhẹ không được tính.</span></p></li>
-        <li><b>4</b><p><strong>Chạm 200 điểm</strong><span>Đạt 200 trong 20 giây là hoàn thành thử thách 67.</span></p></li>
+        <li><b>4</b><p><strong>Chạm 250 điểm</strong><span>Đạt 250 trong 20 giây là hoàn thành thử thách 67.</span></p></li>
       </ol>
       <button class="btn" id="startBtn" type="button">BẬT CAMERA &amp; CHƠI</button>
       <p class="err" id="introErr" hidden></p>
@@ -198,7 +199,7 @@ h1{font-family:var(--display);font-size:clamp(1.4rem,6vw,2rem);margin:0;letter-s
   <section class="screen" id="result" hidden>
     <div class="panel">
       <div class="res-photo" id="resPhoto"><canvas id="snapOut" width="480" height="640"></canvas></div>
-      <div class="challenge" id="challenge" hidden><strong>HOÀN THÀNH THỬ THÁCH 67!</strong><span>200 điểm trong 20 giây. Hai tay của bạn là máy.</span></div>
+      <div class="challenge" id="challenge" hidden><strong>HOÀN THÀNH THỬ THÁCH 67!</strong><span>250 điểm trong 20 giây. Hai tay của bạn là máy.</span></div>
       <p class="rank" id="rankTxt">MÁY BƠM</p>
       <div class="stats">
         <div class="stat"><span>Tổng điểm</span><b id="rScore">0</b></div>
@@ -229,7 +230,7 @@ h1{font-family:var(--display);font-size:clamp(1.4rem,6vw,2rem);margin:0;letter-s
 import { PoseLandmarker, FilesetResolver } from "https://cdn.jsdelivr.net/npm/@mediapipe/tasks-vision@0.10.14/vision_bundle.mjs";
 
 const GAME_MS = 20000;
-const GOAL = 200;
+const GOAL = 250;
 const $ = id => document.getElementById(id);
 const video = $('cam'), fx = $('fx'), ctx = fx.getContext('2d');
 const COL6 = '#FF5A36', COL7 = '#FFD23F', OK = '#3DFFB0';
@@ -375,11 +376,14 @@ function stroke(d, len){
     sfx.combo(g.combo);
     pops.push({ kind:'text', x:W/2, y:H*.42, t:now, text:'COMBO ×'+g.combo, color:OK });
   }
-  if (g.score === GOAL && !g.cleared){
+  if (g.score >= GOAL && !g.cleared){
     g.cleared = true;
     sfx.clear();
     const f = $('flash'); f.classList.remove('on'); void f.offsetWidth; f.classList.add('on');
-    pops.push({ kind:'text', x:W/2, y:H*.5, t:now, text:'200! THỬ THÁCH HOÀN THÀNH', color:COL7, hero:true });
+    pops.push({ kind:'text', x:W/2, y:H*.5, t:now, text: GOAL + '! THỬ THÁCH HOÀN THÀNH', color:COL7, hero:true });
+    setTimeout(() => {
+      if (state === 'play') endRound(true);
+    }, 450);
   }
   const sc = $('score'); sc.textContent = g.score;
   sc.classList.remove('bump'); void sc.offsetWidth; sc.classList.add('bump');
@@ -421,13 +425,13 @@ async function tryLandscape(){
   } catch {}
 }
 
-/* ---------- Confetti for the 200 challenge ---------- */
+/* ---------- Confetti for the 250 challenge ---------- */
 function confetti(ms = 5500){
   if (matchMedia('(prefers-reduced-motion: reduce)').matches) return;
   const c = $('confetti'), x = c.getContext('2d'); c.hidden = false;
   const w = c.width = innerWidth * DPR, h = c.height = innerHeight * DPR;
   const cols = [COL6, COL7, OK, '#F6F1FF'];
-  const parts = Array.from({ length: 200 }, (_, i) => ({
+  const parts = Array.from({ length: 250 }, (_, i) => ({
     x: Math.random() * w, y: -Math.random() * h * .8,
     vx: (Math.random() - .5) * 3 * DPR, vy: (2 + Math.random() * 4) * DPR,
     r: Math.random() * 6.28, vr: (Math.random() - .5) * .3,
@@ -517,18 +521,20 @@ function countdown(){
   }, i * 850));
 }
 
-function endRound(){
+function endRound(cleared = false){
   setState('ending');
-  const b = $('countTxt'); b.textContent = 'HẾT GIỜ!'; b.className = 'anim end';
-  sfx.end();
+  const b = $('countTxt');
+  b.textContent = cleared ? 'HOÀN THÀNH!' : 'HẾT GIỜ!';
+  b.className = 'anim ' + (cleared ? 'clear' : 'end');
+  if (cleared) sfx.clear(); else sfx.end();
   setTimeout(showResult, 1300);
 }
 
 function rankFor(sc){
-  if (sc < 30) return 'MỚI KHỞI ĐỘNG';
-  if (sc < 60) return 'TAY ẤM RỒI ĐÓ';
-  if (sc < 100) return 'MÁY BƠM CHẠY ĐIỆN';
-  if (sc < 150) return 'QUẠT TRẦN SỐ 3';
+  if (sc < 35) return 'MỚI KHỞI ĐỘNG';
+  if (sc < 75) return 'TAY ẤM RỒI ĐÓ';
+  if (sc < 130) return 'MÁY BƠM CHẠY ĐIỆN';
+  if (sc < 190) return 'QUẠT TRẦN SỐ 3';
   if (sc < GOAL) return 'CỐI XAY GIÓ';
   return 'THẦN SIX SEVEN';
 }
@@ -656,7 +662,7 @@ function loop(now){
     $('combo').textContent = g.combo >= 5 && now - g.lastStroke < 650 ? 'CHUỖI ×' + g.combo : '';
     // keep the photo from the fastest moment
     if (el > 1500 && rate >= g.snapRate && now - g.lastSnap > 250){ g.snapRate = rate; g.lastSnap = now; takeSnap(); }
-    if (left <= 0) endRound();
+    if (left <= 0) endRound(g.score >= GOAL);
   } else if (L && (ok6 || ok7)){
     for (const [d, i] of [[6,15],[7,16]]) if (L[i].v > .5){ hands[d].x = L[i].x; hands[d].y = L[i].y; }
   }

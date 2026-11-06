@@ -1,7 +1,7 @@
 import {OFFSET_K, makeHand, updateHand} from './hand-tracker.js';
 export function createPumpGame(api){
 const GAME_MS = 20000;
-const GOAL = 200;
+const GOAL = 250;
 const $ = id => api.root.querySelector('#' + id);
 const video=api.camera.video,fx=api.view.canvas,ctx=api.view.ctx;
 const COL6 = '#FF5A36', COL7 = '#FFD23F', OK = '#3DFFB0';
@@ -62,11 +62,14 @@ function stroke(d, len){
     sfx.combo(g.combo);
     pops.push({ kind:'text', x:W/2, y:H*.42, t:now, text:'COMBO ×'+g.combo, color:OK });
   }
-  if (g.score === GOAL && !g.cleared){
+  if (g.score >= GOAL && !g.cleared){
     g.cleared = true;
     sfx.clear();
     const f = $('flash'); f.classList.remove('on'); void f.offsetWidth; f.classList.add('on');
-    pops.push({ kind:'text', x:W/2, y:H*.5, t:now, text:'200! THỬ THÁCH HOÀN THÀNH', color:COL7, hero:true });
+    pops.push({ kind:'text', x:W/2, y:H*.5, t:now, text: GOAL + '! THỬ THÁCH HOÀN THÀNH', color:COL7, hero:true });
+    api.timers.setTimeout(() => {
+      if (state === 'play') endRound(true);
+    }, 450);
   }
   const sc = $('score'); sc.textContent = g.score;
   sc.classList.remove('bump'); void sc.offsetWidth; sc.classList.add('bump');
@@ -95,13 +98,13 @@ const locked=false;
 function tryLandscape(){}
 $('rotate').hidden=true;
 
-/* ---------- Confetti for the 200 challenge ---------- */
+/* ---------- Confetti for the 250 challenge ---------- */
 function confetti(ms = 5500){
   if (matchMedia('(prefers-reduced-motion: reduce)').matches) return;
   const c = $('confetti'), x = c.getContext('2d'); c.hidden = false;
   const w = c.width = innerWidth * DPR, h = c.height = innerHeight * DPR;
   const cols = [COL6, COL7, OK, '#F6F1FF'];
-  const parts = Array.from({ length: 200 }, (_, i) => ({
+  const parts = Array.from({ length: 250 }, (_, i) => ({
     x: Math.random() * w, y: -Math.random() * h * .8,
     vx: (Math.random() - .5) * 3 * DPR, vy: (2 + Math.random() * 4) * DPR,
     r: Math.random() * 6.28, vr: (Math.random() - .5) * .3,
@@ -164,18 +167,20 @@ function countdown(){
   }, i * 850));
 }
 
-function endRound(){
+function endRound(cleared = false){
   setState('ending');
-  const b = $('countTxt'); b.textContent = 'HẾT GIỜ!'; b.className = 'anim end';
-  sfx.end();
+  const b = $('countTxt');
+  b.textContent = cleared ? 'HOÀN THÀNH!' : 'HẾT GIỜ!';
+  b.className = 'anim ' + (cleared ? 'clear' : 'end');
+  if (cleared) sfx.clear(); else sfx.end();
   api.timers.setTimeout(showResult, 1300);
 }
 
 function rankFor(sc){
-  if (sc < 30) return 'MỚI KHỞI ĐỘNG';
-  if (sc < 60) return 'TAY ẤM RỒI ĐÓ';
-  if (sc < 100) return 'MÁY BƠM CHẠY ĐIỆN';
-  if (sc < 150) return 'QUẠT TRẦN SỐ 3';
+  if (sc < 35) return 'MỚI KHỞI ĐỘNG';
+  if (sc < 75) return 'TAY ẤM RỒI ĐÓ';
+  if (sc < 130) return 'MÁY BƠM CHẠY ĐIỆN';
+  if (sc < 190) return 'QUẠT TRẦN SỐ 3';
   if (sc < GOAL) return 'CỐI XAY GIÓ';
   return 'THẦN SIX SEVEN';
 }
@@ -284,12 +289,12 @@ function loop(now,dt,detection){
     g.strokes = g.strokes.filter(t => now - t < 1000);
     const rate = g.strokes.length;
     if (rate > g.peak) g.peak = rate;
-    $('meter').querySelector('i').style.width = Math.min(100, rate / 12 * 100) + '%';
+    $('meter').style.width = Math.min(100, rate / 12 * 100) + '%';
     $('rateTxt').textContent = rate + ' nhát/giây';
     $('combo').textContent = g.combo >= 5 && now - g.lastStroke < 650 ? 'CHUỖI ×' + g.combo : '';
     // keep the photo from the fastest moment
     if (el > 1500 && rate >= g.snapRate && now - g.lastSnap > 250){ g.snapRate = rate; g.lastSnap = now; takeSnap(); }
-    if (left <= 0) endRound();
+    if (left <= 0) endRound(g.score >= GOAL);
   } else if (L && (ok6 || ok7)){
     for (const [d, i] of [[6,15],[7,16]]) if (L[i].v > .5){ hands[d].x = L[i].x; hands[d].y = L[i].y; }
   }

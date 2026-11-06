@@ -2,8 +2,8 @@
 
 A single, static, mobile-first website combining two original games:
 
-- **Pose Battle**: two players, 10 original random poses, 10 seconds per round, each player must score >=90% and hold for 400 ms. Win after 3 successful poses, lose after 3 failed rounds.
-- **Pump Challenge**: one player, 20 seconds, alternating full-stroke arm movement, score 6 from left wrist and 7 from right wrist, target 200 points. Keeps combo, peak speed and personal best.
+- **Pose Battle**: two players, 10 original random poses, 10 seconds per round, each player must score >=90% and hold for 400 ms. Win after 7 successful poses, lose after 3 failed rounds.
+- **Pump Challenge**: one player, 20 seconds, alternating full-stroke arm movement, score 6 from left wrist and 7 from right wrist, target 250 points. Keeps combo, peak speed and personal best.
 
 ## Play locally
 

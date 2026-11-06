@@ -30,7 +30,7 @@ html,body{height:100%;margin:0;background:var(--ink);color:var(--paper);font-fam
   display:flex;flex-direction:column;justify-content:space-between}
 .hud-top{display:grid;grid-template-columns:1fr auto 1fr;align-items:start;gap:12px}
 .progress{display:flex;flex-direction:column;gap:6px}
-.pips{display:flex;gap:6px}
+.pips{display:flex;gap:6px;flex-wrap:wrap;max-width:260px}
 .pip{width:26px;height:26px;border-radius:8px;background:rgba(246,241,255,.14);display:flex;align-items:center;justify-content:center;font-family:var(--display);font-size:.85rem;color:var(--ink)}
 .pip.win{background:var(--ok)} .pip.lose{background:var(--danger)}
 .progress span{font-size:.72rem;letter-spacing:.14em;text-transform:uppercase;color:var(--muted)}
@@ -137,7 +137,7 @@ h1 .a{color:var(--p1)} h1 .b{color:var(--p2)}
     <div class="hud-top">
       <div class="progress">
         <div class="pips" id="pips"></div>
-        <span>3 dáng chuẩn để thắng</span>
+        <span>7 dáng chuẩn để thắng</span>
       </div>
       <div class="ref">
         <small id="roundTxt">DÁNG 1</small>
@@ -172,7 +172,7 @@ h1 .a{color:var(--p1)} h1 .b{color:var(--p2)}
         <li><b>1</b><p><strong>Dựng máy nằm ngang</strong><span>Đặt ngang ngực, lùi lại cho camera thấy cả hai người.</span></p></li>
         <li><b>2</b><p><strong>Đứng cạnh nhau</strong><span>Người bên trái màn hình là Người 1, bên phải là Người 2.</span></p></li>
         <li><b>3</b><p><strong>Khớp dáng trong 10 giây</strong><span>Cả hai đạt 90% và giữ yên một chút là qua lượt.</span></p></li>
-        <li><b>4</b><p><strong>Đủ 3 dáng là thắng</strong><span>Kho có 10 dáng ngẫu nhiên. Trượt 3 lượt là thua.</span></p></li>
+        <li><b>4</b><p><strong>Đủ 7 dáng là thắng</strong><span>Kho có 10 dáng ngẫu nhiên. Trượt 3 lượt là thua.</span></p></li>
       </ol>
       <button class="btn" id="startBtn" type="button">BẬT CAMERA &amp; CHƠI</button>
       <p class="err" id="introErr" hidden></p>
@@ -208,7 +208,7 @@ import { PoseLandmarker, FilesetResolver } from "https://cdn.jsdelivr.net/npm/@m
 
 /* ---------- Rules ---------- */
 const ROUND_MS = 10000;
-const NEED_WINS = 3, MAX_FAILS = 3;
+const NEED_WINS = 7, MAX_FAILS = 3;
 const PASS = .90;          // each player must reach 90%
 const HOLD_MS = 400;       // and both hold it this long
 const $ = id => document.getElementById(id);
@@ -470,8 +470,8 @@ function renderPips(){
 function showResult(){
   const win = G.wins >= NEED_WINS;
   const v = $('verdict'); v.className = 'verdict ' + (win ? 'win' : 'lose');
-  $('vTitle').textContent = win ? 'THẮNG RỒI! 3 DÁNG CHUẨN' : 'THUA SÁT NÚT';
-  $('vSub').textContent = win ? `Qua ${G.wins} dáng sau ${G.rounds.length} lượt. Hai bạn ăn ý thật.` : `Mới qua ${G.wins}/3 dáng. Làm lại ván nữa?`;
+  $('vTitle').textContent = win ? 'THẮNG RỒI! 7 DÁNG CHUẨN' : 'THUA SÁT NÚT';
+  $('vSub').textContent = win ? `Qua ${G.wins} dáng sau ${G.rounds.length} lượt. Hai bạn ăn ý thật.` : `Mới qua ${G.wins}/7 dáng. Làm lại ván nữa?`;
   drawCollage(win);
   setState('result');
   if (win){ sfx.win(); confetti(); } else sfx.lose();
@@ -495,7 +495,7 @@ function drawCollage(win){
   c.fillStyle = COL[1]; c.fillText('SEVEN', gap + c.measureText('SIX ').width, 72);
   c.fillStyle = '#F6F1FF'; c.fillText('POSE', gap + c.measureText('SIX SEVEN ').width, 72);
   c.textAlign = 'right'; c.font = '30px Bungee, Impact, sans-serif';
-  c.fillStyle = win ? OK : BAD; c.fillText(win ? 'THẮNG ' + G.wins + '/3' : 'THUA ' + G.wins + '/3', cv.width - gap, 70);
+  c.fillStyle = win ? OK : BAD; c.fillText(win ? 'THẮNG ' + G.wins + '/7' : 'THUA ' + G.wins + '/7', cv.width - gap, 70);
   const rowW = cols * tw + (cols - 1) * gap, x0 = (cv.width - rowW) / 2;
   G.rounds.forEach((r, i) => {
     const col = i % 3, row = Math.floor(i / 3);

@@ -2,8 +2,8 @@
 
 Ứng dụng web camera gồm hai chế độ:
 
-- **Pose Battle**: 2 người, 10 dáng mẫu, cần >=90% mỗi người và giữ 400 ms; thắng sau 3 lượt đúng, thua sau 3 lượt sai.
-- **Pump Challenge**: 1 người, 20 giây, bơm hai tay so le; tay trái nhận 6 điểm, tay phải nhận 7 điểm; mục tiêu 200 điểm.
+- **Pose Battle**: 2 người, 10 dáng mẫu, cần >=90% mỗi người và giữ 400 ms; thắng sau 7 lượt đúng, thua sau 3 lượt sai.
+- **Pump Challenge**: 1 người, 20 giây, bơm hai tay so le; tay trái nhận 6 điểm, tay phải nhận 7 điểm; mục tiêu 250 điểm.
 
 ## Repository structure
 

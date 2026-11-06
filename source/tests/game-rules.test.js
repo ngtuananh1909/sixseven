@@ -47,3 +47,23 @@ test('TimerBag can clear pending timers when changing game mode',async()=>{
   await new Promise(resolve=>setTimeout(resolve,35));
   assert.equal(fired,false);
 });
+
+test('Pose game rule requires 7 correct poses to win',async()=>{
+  const {createPoseGame}=await import('../src/games/pose/pose-game.js');
+  const {template}=await import('../src/games/pose/template.js');
+  assert.match(createPoseGame.toString(),/NEED_WINS\s*=\s*7/);
+  assert.ok(template.includes('7 dáng chuẩn để thắng'));
+  assert.ok(template.includes('Đủ 7 dáng là thắng'));
+});
+
+test('Pump game rule requires 250 points and meter selector is direct',async()=>{
+  const {createPumpGame}=await import('../src/games/pump/pump-game.js');
+  const {template}=await import('../src/games/pump/template.js');
+  const code=createPumpGame.toString();
+  assert.match(code,/GOAL\s*=\s*250/);
+  assert.ok(!code.includes("$('meter').querySelector('i')"), 'must not query selector i inside #meter');
+  assert.ok(template.includes('MỤC TIÊU <b>250</b>'));
+  assert.ok(template.includes('Chạm 250 điểm'));
+  assert.ok(template.includes('250 điểm trong 20 giây'));
+});
+

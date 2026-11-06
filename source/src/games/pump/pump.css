@@ -84,6 +84,7 @@ h1{font-family:var(--display);font-size:clamp(1.4rem,6vw,2rem);margin:0;letter-s
 #count b{font-family:var(--display);font-size:clamp(9rem,45vw,20rem);color:var(--paper);text-shadow:0 10px 0 rgba(0,0,0,.4);line-height:1}
 #count b.go{color:var(--ok);font-size:clamp(6rem,30vw,14rem)}
 #count b.end{color:var(--danger);font-size:clamp(3.5rem,15vw,7rem);text-align:center}
+#count b.clear{color:var(--seven);font-size:clamp(3.2rem,13vw,6.5rem);text-align:center}
 #count b.anim{animation:cd .8s ease-out both}
 @keyframes cd{0%{transform:scale(2.2);opacity:0}25%{transform:scale(.95);opacity:1}100%{transform:scale(1);opacity:.85}}
 

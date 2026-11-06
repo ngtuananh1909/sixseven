@@ -3,7 +3,7 @@ import {saveCanvas} from '../../shared/snapshot.js';
 export function createPoseGame(api){
 /* ---------- Rules ---------- */
 const ROUND_MS = 10000;
-const NEED_WINS = 3, MAX_FAILS = 3;
+const NEED_WINS = 7, MAX_FAILS = 3;
 const PASS = .90;          // each player must reach 90%
 const HOLD_MS = 400;       // and both hold it this long
 const $ = id => api.root.querySelector('#' + id);
@@ -133,8 +133,8 @@ function renderPips(){
 function showResult(){
   const win = G.wins >= NEED_WINS;
   const v = $('verdict'); v.className = 'verdict ' + (win ? 'win' : 'lose');
-  $('vTitle').textContent = win ? 'THẮNG RỒI! 3 DÁNG CHUẨN' : 'THUA SÁT NÚT';
-  $('vSub').textContent = win ? `Qua ${G.wins} dáng sau ${G.rounds.length} lượt. Hai bạn ăn ý thật.` : `Mới qua ${G.wins}/3 dáng. Làm lại ván nữa?`;
+  $('vTitle').textContent = win ? 'THẮNG RỒI! 7 DÁNG CHUẨN' : 'THUA SÁT NÚT';
+  $('vSub').textContent = win ? `Qua ${G.wins} dáng sau ${G.rounds.length} lượt. Hai bạn ăn ý thật.` : `Mới qua ${G.wins}/7 dáng. Làm lại ván nữa?`;
   drawCollage(win);
   setState('result');
   if (win){ sfx.win(); confetti(); } else sfx.lose();
@@ -154,7 +154,7 @@ function drawCollage(win){
   c.fillStyle = COL[1]; c.fillText('SEVEN', gap + c.measureText('SIX ').width, 72);
   c.fillStyle = '#F6F1FF'; c.fillText('POSE', gap + c.measureText('SIX SEVEN ').width, 72);
   c.textAlign = 'right'; c.font = '30px Bungee, Impact, sans-serif';
-  c.fillStyle = win ? OK : BAD; c.fillText(win ? 'THẮNG ' + G.wins + '/3' : 'THUA ' + G.wins + '/3', cv.width - gap, 70);
+  c.fillStyle = win ? OK : BAD; c.fillText(win ? 'THẮNG ' + G.wins + '/7' : 'THUA ' + G.wins + '/7', cv.width - gap, 70);
   const rowW = cols * tw + (cols - 1) * gap, x0 = (cv.width - rowW) / 2;
   G.rounds.forEach((r, i) => {
     const col = i % 3, row = Math.floor(i / 3);
